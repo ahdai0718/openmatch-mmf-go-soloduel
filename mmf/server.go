@@ -22,8 +22,10 @@ import (
 	"fmt"
 	"log"
 	"net"
+	"time"
 
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/keepalive"
 	"open-match.dev/open-match/pkg/pb"
 )
 
@@ -43,7 +45,12 @@ func Start(queryServiceAddr string, serverPort int) {
 	}
 
 	// Create and host a new gRPC service on the configured port.
-	server := grpc.NewServer()
+	server := grpc.NewServer(grpc.KeepaliveEnforcementPolicy(
+		keepalive.EnforcementPolicy{
+			MinTime:             10 * time.Second,
+			PermitWithoutStream: true,
+		},
+	))
 	pb.RegisterMatchFunctionServer(server, &mmfService)
 	ln, err := net.Listen("tcp", fmt.Sprintf(":%d", serverPort))
 	if err != nil {
